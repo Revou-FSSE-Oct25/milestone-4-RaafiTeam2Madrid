@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model User
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  role      Role      @default(CUSTOMER)
+  accounts  Account[] // Relasi One-to-Many ke Account
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Enum untuk Role User
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+// Model Rekening Bank
+model Account {
+  id               Int           @id @default(autoincrement())
+  accountNumber    String        @unique
+  balance          Decimal       @default(0.0) // Gunakan Decimal untuk presisi uang
+  userId           Int
+  user             User          @relation(fields: [userId], references: [id])
+  
+  // Relasi untuk mencatat transaksi keluar dan masuk
+  transactionsFrom Transaction[] @relation("SourceAccount")
+  transactionsTo   Transaction[] @relation("DestinationAccount")
+  
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+// Model Transaksi
+model Transaction {
+  id                   Int             @id @default(autoincrement())
+  type                 TransactionType
+  amount               Decimal
+  
+  // Rekening pengirim (Bisa null jika tipe transaksinya DEPOSIT/Setor Tunai)
+  sourceAccountId      Int?
+  sourceAccount        Account?        @relation("SourceAccount", fields: [sourceAccountId], references: [id])
+  
+  // Rekening penerima (Bisa null jika tipe transaksinya WITHDRAW/Tarik Tunai)
+  destinationAccountId Int?
+  destinationAccount   Account?        @relation("DestinationAccount", fields: [destinationAccountId], references: [id])
+  
+  createdAt            DateTime        @default(now())
+}
+
+// Enum untuk Tipe Transaksi
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  TRANSFER
+}
