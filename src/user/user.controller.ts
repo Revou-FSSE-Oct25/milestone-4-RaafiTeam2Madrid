@@ -1,20 +1,18 @@
-import { Controller, Get, Patch, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // <-- SUDAH DIPERBAIKI
 import { UserService } from './user.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UpdateUserDto } from './dto/update-user.dto';
 
-@Controller('user')
+@ApiTags('User')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('profile')
-  getProfile(@Req() req) {
-    return this.userService.getProfile(req.user.id);
-  }
-
-  @Patch('profile')
-  updateProfile(@Req() req, @Body() dto: UpdateUserDto) {
-    return this.userService.updateProfile(req.user.id, dto);
+  @ApiOperation({ summary: 'Mendapatkan data profil user' })
+  getProfile(@Request() req: any) {
+    return req.user;
   }
 }

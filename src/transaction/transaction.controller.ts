@@ -1,39 +1,37 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Get,
-  Param,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Param } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // <-- SUDAH DIPERBAIKI
 import { TransactionService } from './transaction.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DepositWithdrawDto, TransferDto } from './dto/transaction.dto';
 
-@Controller('transaction')
+@ApiTags('Transaction')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Controller('transaction')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post('deposit')
-  deposit(@Req() req, @Body() dto: DepositWithdrawDto) {
+  @ApiOperation({ summary: 'Setor tunai' })
+  deposit(@Req() req: any, @Body() dto: DepositWithdrawDto) {
     return this.transactionService.deposit(req.user.id, dto);
   }
 
   @Post('withdraw')
-  withdraw(@Req() req, @Body() dto: DepositWithdrawDto) {
+  @ApiOperation({ summary: 'Tarik tunai' })
+  withdraw(@Req() req: any, @Body() dto: DepositWithdrawDto) {
     return this.transactionService.withdraw(req.user.id, dto);
   }
 
   @Post('transfer')
-  transfer(@Req() req, @Body() dto: TransferDto) {
+  @ApiOperation({ summary: 'Transfer saldo' })
+  transfer(@Req() req: any, @Body() dto: TransferDto) {
     return this.transactionService.transfer(req.user.id, dto);
   }
 
-  // Endpoint Baru: GET /transaction/history/:accountNumber
   @Get('history/:accountNumber')
-  getHistory(@Req() req, @Param('accountNumber') accountNumber: string) {
+  @ApiOperation({ summary: 'Lihat riwayat transaksi' })
+  getHistory(@Req() req: any, @Param('accountNumber') accountNumber: string) {
     return this.transactionService.getHistory(req.user.id, accountNumber);
   }
 }
