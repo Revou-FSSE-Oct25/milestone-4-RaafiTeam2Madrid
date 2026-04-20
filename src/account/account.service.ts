@@ -34,20 +34,17 @@ export class AccountService {
     }
   }
 
-  async getMyAccounts(userId: number) {
+  async getAccounts(userId: number) {
     return this.prisma.account.findMany({
       where: { userId },
     });
   }
 
-  // --- FITUR DELETE (TUTUP REKENING) ---
   async deleteAccount(userId: number, accountNumber: string) {
-    // 1. Cari rekeningnya
     const account = await this.prisma.account.findUnique({
       where: { accountNumber },
     });
 
-    // 2. Validasi keamanan
     if (!account) {
       throw new NotFoundException('Rekening tidak ditemukan');
     }
@@ -57,7 +54,6 @@ export class AccountService {
       );
     }
 
-    // 3. Syarat bank: Saldo harus 0!
     if (Number(account.balance) > 0) {
       throw new BadRequestException(
         'Kosongkan saldo Anda terlebih dahulu sebelum menutup rekening',
@@ -65,7 +61,6 @@ export class AccountService {
     }
 
     try {
-      // 4. Hapus rekening
       await this.prisma.$transaction(async (prisma) => {
         await prisma.transaction.deleteMany({
           where: {
@@ -86,6 +81,38 @@ export class AccountService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Gagal menghapus rekening');
+    }
+  }
+
+  async updateAccount(userId: number, accountId: number, data: any) {
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+    });
+
+    if (!account) {
+      throw new NotFoundException('Rekening tidak ditemukan');
+    }
+
+    if (account.userId !== userId) {
+      throw new UnauthorizedException(
+        'Anda tidak berhak mengubah data rekening ini',
+      );
+    }
+
+    try {
+      const updatedAccount = await this.prisma.account.update({
+        where: { id: accountId },
+        data: data as any,
+      });
+
+      return {
+        message: 'Data rekening berhasil diperbarui',
+        data: updatedAccount,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Gagal memperbarui rekening. Pastikan field yang dikirim valid dengan database.',
+      );
     }
   }
 }

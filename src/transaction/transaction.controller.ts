@@ -1,6 +1,15 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Get,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // <-- SUDAH DIPERBAIKI
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TransactionService } from './transaction.service';
 import { DepositWithdrawDto, TransferDto } from './dto/transaction.dto';
 
@@ -30,8 +39,14 @@ export class TransactionController {
   }
 
   @Get('history/:accountNumber')
-  @ApiOperation({ summary: 'Lihat riwayat transaksi' })
+  @ApiOperation({ summary: 'Lihat riwayat transaksi seluruhnya' })
   getHistory(@Req() req: any, @Param('accountNumber') accountNumber: string) {
     return this.transactionService.getHistory(req.user.id, accountNumber);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Lihat detail satu transaksi spesifik' })
+  getTransactionById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.transactionService.getTransactionById(req.user.id, id);
   }
 }

@@ -6,13 +6,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DepositWithdrawDto, TransferDto } from './dto/transaction.dto'; // Tambahkan TransferDto di sini
+import { DepositWithdrawDto, TransferDto } from './dto/transaction.dto';
 
 @Injectable()
 export class TransactionService {
   constructor(private prisma: PrismaService) {}
 
-  // --- FITUR SETOR TUNAI ---
   async deposit(userId: number, dto: DepositWithdrawDto) {
     const account = await this.prisma.account.findUnique({
       where: { accountNumber: dto.accountNumber },
@@ -20,6 +19,12 @@ export class TransactionService {
 
     if (!account) {
       throw new NotFoundException('Nomor rekening tidak ditemukan');
+    }
+
+    if (account.userId !== userId) {
+      throw new UnauthorizedException(
+        'Anda tidak berhak melakukan setor tunai ke rekening ini',
+      );
     }
 
     try {
@@ -53,7 +58,6 @@ export class TransactionService {
     }
   }
 
-  // --- FITUR TARIK TUNAI ---
   async withdraw(userId: number, dto: DepositWithdrawDto) {
     const account = await this.prisma.account.findUnique({
       where: { accountNumber: dto.accountNumber },
@@ -104,9 +108,7 @@ export class TransactionService {
     }
   }
 
-  // --- FITUR TRANSFER ---
   async transfer(userId: number, dto: TransferDto) {
-    // 1. Cek rekening asal
     const sourceAccount = await this.prisma.account.findUnique({
       where: { accountNumber: dto.sourceAccountNumber },
     });
@@ -123,7 +125,6 @@ export class TransactionService {
       throw new BadRequestException('Saldo tidak mencukupi untuk transfer');
     }
 
-    // 2. Cek rekening tujuan
     const destinationAccount = await this.prisma.account.findUnique({
       where: { accountNumber: dto.destinationAccountNumber },
     });
@@ -134,19 +135,16 @@ export class TransactionService {
 
     try {
       const result = await this.prisma.$transaction(async (prisma) => {
-        // A. Kurangi saldo rekening asal
         const updatedSource = await prisma.account.update({
           where: { id: sourceAccount.id },
           data: { balance: { decrement: dto.amount } },
         });
 
-        // B. Tambah saldo rekening tujuan
         await prisma.account.update({
           where: { id: destinationAccount.id },
           data: { balance: { increment: dto.amount } },
         });
 
-        // C. Catat histori transfer
         const transaction = await prisma.transaction.create({
           data: {
             type: 'TRANSFER',
@@ -172,9 +170,8 @@ export class TransactionService {
       throw new InternalServerErrorException('Gagal melakukan transfer');
     }
   }
-  // --- FITUR CEK HISTORI TRANSAKSI ---
+
   async getHistory(userId: number, accountNumber: string) {
-    // 1. Cek apakah rekening ada dan milik user yang sedang login
     const account = await this.prisma.account.findUnique({
       where: { accountNumber },
     });
@@ -188,7 +185,6 @@ export class TransactionService {
       );
     }
 
-    // 2. Ambil semua transaksi di mana rekening ini menjadi pengirim (source) ATAU penerima (destination)
     const history = await this.prisma.transaction.findMany({
       where: {
         OR: [
@@ -197,13 +193,42 @@ export class TransactionService {
         ],
       },
       orderBy: {
-        createdAt: 'desc', // Urutkan dari yang paling baru
+        createdAt: 'desc',
       },
     });
 
     return {
       message: 'Histori transaksi berhasil diambil',
       data: history,
+    };
+  }
+
+  async getTransactionById(userId: number, transactionId: number) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        sourceAccount: true,
+        destinationAccount: true,
+      },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Data transaksi tidak ditemukan');
+    }
+
+    const isSourceOwner = transaction.sourceAccount?.userId === userId;
+    const isDestinationOwner =
+      transaction.destinationAccount?.userId === userId;
+
+    if (!isSourceOwner && !isDestinationOwner) {
+      throw new UnauthorizedException(
+        'Anda tidak berhak melihat detail transaksi ini',
+      );
+    }
+
+    return {
+      message: 'Detail transaksi berhasil diambil',
+      data: transaction,
     };
   }
 }

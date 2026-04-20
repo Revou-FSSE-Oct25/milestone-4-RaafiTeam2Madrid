@@ -2,31 +2,43 @@ import {
   Controller,
   Post,
   Get,
-  Delete,
+  Patch,
+  Body,
   Param,
-  Req,
   UseGuards,
+  Req,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { AccountService } from './account.service';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AccountService } from './account.service';
 
-@Controller('account')
+@ApiTags('Account')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
-  @Post('create')
-  createAccount(@Req() req) {
+  @Post()
+  @ApiOperation({ summary: 'Membuat rekening baru' })
+  createAccount(@Req() req: any) {
     return this.accountService.createAccount(req.user.id);
   }
 
-  @Get('my-accounts')
-  getMyAccounts(@Req() req) {
-    return this.accountService.getMyAccounts(req.user.id);
+  @Get()
+  @ApiOperation({ summary: 'Melihat semua rekening milik user' })
+  getAccounts(@Req() req: any) {
+    return this.accountService.getAccounts(req.user.id);
   }
 
-  @Delete(':accountNumber')
-  deleteAccount(@Req() req, @Param('accountNumber') accountNumber: string) {
-    return this.accountService.deleteAccount(req.user.id, accountNumber);
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update data rekening (Label/Active status)' })
+  updateAccount(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: { label?: string; isActive?: boolean },
+  ) {
+    return this.accountService.updateAccount(req.user.id, id, data);
   }
 }
