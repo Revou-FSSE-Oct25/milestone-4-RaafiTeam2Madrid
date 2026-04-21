@@ -44,5 +44,5 @@ Kamu bisa melihat detail data yang dikirim dan mengetes *endpoint* secara langsu
 
 ### 1. Clone Repositori
 ```bash
-git clone <https://github.com/Revou-FSSE-Oct25/milestone-2-RaafiTeam2Madrid>
+git clone <https://github.com/Revou-FSSE-Oct25/milestone-4-RaafiTeam2Madrid>
 cd revobank-api
