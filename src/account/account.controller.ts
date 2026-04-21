@@ -9,7 +9,7 @@ import {
   Req,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger'; // <-- Tambah ApiBody
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AccountService } from './account.service';
 
@@ -34,10 +34,18 @@ export class AccountController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update data rekening (Label/Active status)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        label: { type: 'string', example: 'Tabungan Skripsi UI' },
+      },
+    },
+  })
   updateAccount(
     @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: { label?: string; isActive?: boolean },
+    @Body() data: { label?: string },
   ) {
     return this.accountService.updateAccount(req.user.id, id, data);
   }
