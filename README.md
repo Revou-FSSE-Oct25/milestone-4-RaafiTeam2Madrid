@@ -33,7 +33,7 @@ Kamu bisa melihat detail data yang dikirim dan mengetes *endpoint* secara langsu
 
 👉 **Live API Docs:** [https://revobank-api-raafi-production.up.railway.app/api](https://revobank-api-raafi-production.up.railway.app/api)
 
-*(Catatan: Untuk mengetes endpoint yang digembok/diproteksi di Swagger, silakan login terlebih dahulu untuk mendapatkan token JWT. Kemudian klik tombol **Authorize** dan masukkan token tersebut).*
+
 
 ## 🛠️ Panduan Instalasi Lokal
 
@@ -44,5 +44,5 @@ Kamu bisa melihat detail data yang dikirim dan mengetes *endpoint* secara langsu
 
 ### 1. Clone Repositori
 ```bash
-git clone <masukkan-link-github-kamu-di-sini>
+git clone <https://github.com/Revou-FSSE-Oct25/milestone-2-RaafiTeam2Madrid>
 cd revobank-api
